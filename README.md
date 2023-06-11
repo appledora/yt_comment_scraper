@@ -22,4 +22,4 @@ python scrape_comments.py --json_directory links --output_dir comments --max_com
 This project is open to contributions. Please feel free to open an issue or a pull request.
 
 ### License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the BSD 3 clause  License - see the [LICENSE.md](LICENSE.md) file for details
