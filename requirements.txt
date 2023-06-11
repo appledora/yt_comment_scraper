@@ -1,0 +1,3 @@
+Selenium
+Pandas 
+tqdm
