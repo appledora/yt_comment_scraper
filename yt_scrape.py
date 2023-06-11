@@ -18,7 +18,7 @@ chrome_options.add_argument("--user-data-dir=hash")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
 
-def scrape(url="", max_scroll=3):
+def scrape(url="", max_scroll=3, number_of_comments=10):
 
     browser = webdriver.Chrome(options=chrome_options)
 
@@ -70,9 +70,12 @@ def scrape(url="", max_scroll=3):
         error = "Error: Double check selector OR "
         error += "element may not yet be on the screen at the time of the find operation"
         print(error)
+
+    if len(comment_elems) < number_of_comments:
+        number_of_comments = len(comment_elems)
     url_comments = []
     # print("> VIDEO TITLE: " + title + "\n")
-    for comment in comment_elems:
+    for comment in comment_elems[:number_of_comments]:
         url_comments.append(comment.text)
 
     browser.close()
@@ -86,7 +89,8 @@ if __name__ == "__main__":
         "--json_file_directory", type=str, default="links", help="directory of json files containing links"
     )
     parser.add_argument("--output_directory", type=str, default="output", help="directory to save the csv files")
-    parser.add_argument("--max_scroll", type=int, default=5, help="max number of scrolls to perform")
+    parser.add_argument("--max_scroll", type=int, default=4, help="max number of scrolls to perform")
+    parser.add_argument("--max_comments", type=int, default=100, help="max number of comments to scrape")
     args = parser.parse_args()
     json_file_dir = os.path.join(args.json_file_directory, "*.json")
     json_files = glob.glob(json_file_dir)
@@ -98,13 +102,13 @@ if __name__ == "__main__":
 
             data = json.load(f)
             for video in data:
-                temp_comments = scrape(video["link"], args.max_scroll)
+                temp_comments = scrape(video["link"], args.max_scroll, args.max_comments)
                 temp_ids = [video["video_id"]] * len(temp_comments)
                 file_comments.extend(temp_comments)
                 file_ids.extend(temp_ids)
 
         df = pd.DataFrame({"comments": file_comments, "video_id": file_ids})
-        filename = json_file.rstrip(".json") + "_comments.csv"
+        filename = json_file.split("/")[-1].rstrip(".json") + "_comments.csv"
         output_path = os.path.join(args.output_directory, filename)
 
         df.to_csv(output_path, index=False)
