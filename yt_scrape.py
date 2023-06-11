@@ -1,39 +1,32 @@
-# for each link, open the video and extract the comments
-# save the comments to a csv file
-
 from selenium import webdriver
 import time
 import pandas as pd
 import time
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
-import json
 import time
-
+import os
+import argparse
+import json
+import glob
 from selenium.webdriver.common.by import By
 from selenium.common import exceptions
-from selenium.webdriver.chrome.service import Service
 
 options = {}
 chrome_options = Options()
 chrome_options.add_argument("--user-data-dir=hash")
-# chrome_options.add_argument("--disable-gpu")
-# chrome_options.add_argument("--incognito")
 chrome_options.add_argument("--disable-dev-shm-usage")
-# chrome_options.add_argument("--headless")
 
 
-def scrape(url):
+def scrape(url="", max_scroll=3):
 
     browser = webdriver.Chrome(options=chrome_options)
 
     browser.get(url)
-    time.sleep(10)
+    time.sleep(5)
 
     try:
-        # Extract the elements storing the video title and
-        # comment section.
-        title = browser.find_element(By.XPATH, '//*[@id="title"]/h1/yt-formatted-string').text
+        # Extract the elements storing the comment section.
         comment_section = browser.find_element(By.XPATH, '//*[@id="comments"]')
     except exceptions.NoSuchElementException:
         # Note: Youtube may have changed their HTML layouts for
@@ -52,11 +45,12 @@ def scrape(url):
     # Scroll all the way down to the bottom in order to get all the
     # elements loaded (since Youtube dynamically loads them).
     last_height = browser.execute_script("return document.documentElement.scrollHeight")
-
+    scoll_count = 0
     while True:
         # Scroll down 'til "next load".
         browser.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
-
+        if scoll_count == max_scroll:
+            break
         # Wait to load everything thus far.
         time.sleep(2)
 
@@ -65,6 +59,7 @@ def scrape(url):
         if new_height == last_height:
             break
         last_height = new_height
+        scoll_count += 1
 
     # One last scroll just in case.
     browser.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
@@ -76,7 +71,7 @@ def scrape(url):
         error += "element may not yet be on the screen at the time of the find operation"
         print(error)
     url_comments = []
-    print("> VIDEO TITLE: " + title + "\n")
+    # print("> VIDEO TITLE: " + title + "\n")
     for comment in comment_elems:
         url_comments.append(comment.text)
 
@@ -84,23 +79,32 @@ def scrape(url):
     return url_comments
 
 
-# read all the json files and extract the links to a list
-# then write the list to a csv file
+if __name__ == "__main__":
+    # scrape("https://www.youtube.com/watch?v=2lK4W6l7vO8")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--json_file_directory", type=str, default="links", help="directory of json files containing links"
+    )
+    parser.add_argument("--output_directory", type=str, default="output", help="directory to save the csv files")
+    parser.add_argument("--max_scroll", type=int, default=5, help="max number of scrolls to perform")
+    args = parser.parse_args()
+    json_file_dir = os.path.join(args.json_file_directory, "*.json")
+    json_files = glob.glob(json_file_dir)
+    print(f"{len(json_files)} json files found at {json_file_dir}")
+    for json_file in json_files:
+        file_comments = []
+        file_ids = []
+        with open(json_file) as f:
 
-import json
-import glob
+            data = json.load(f)
+            for video in data:
+                temp_comments = scrape(video["link"], args.max_scroll)
+                temp_ids = [video["video_id"]] * len(temp_comments)
+                file_comments.extend(temp_comments)
+                file_ids.extend(temp_ids)
 
-all_json_files = glob.glob("/home/appledora/Documents/bangla-ai/violens/comments/json/অত্যাচার  আদিবাসী.json")
-print(len(all_json_files))
+        df = pd.DataFrame({"comments": file_comments, "video_id": file_ids})
+        filename = json_file.rstrip(".json") + "_comments.csv"
+        output_path = os.path.join(args.output_directory, filename)
 
-for json_file in all_json_files:
-    file_comments = []
-    with open(json_file) as f:
-        data = json.load(f)
-        for video in data:
-            file_comments.extend(scrape(video["link"]))
-
-    df = pd.DataFrame({"comments": file_comments})
-    print(df.shape)
-    filename = json_file.rstrip(".json")
-    df.to_csv(f"{filename}.csv")
+        df.to_csv(output_path, index=False)

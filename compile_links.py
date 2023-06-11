@@ -72,8 +72,12 @@ def get_video_results(output_dir=".", search_query="python", max_scroll=3, numbe
         except:
             snippet = None
 
+        # get the video id from the link
+        id = link.split("=")[-1]
+
         youtube_data.append(
             {
+                "video_id": id,
                 "title": title,
                 "link": link,
                 "views": views,
