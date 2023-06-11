@@ -85,10 +85,8 @@ def scrape(url="", max_scroll=3, number_of_comments=10):
 if __name__ == "__main__":
     # scrape("https://www.youtube.com/watch?v=2lK4W6l7vO8")
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--json_file_directory", type=str, default="links", help="directory of json files containing links"
-    )
-    parser.add_argument("--output_directory", type=str, default="output", help="directory to save the csv files")
+    parser.add_argument("--json_directory", type=str, default="links", help="directory of json files containing links")
+    parser.add_argument("--output_directory", type=str, default="comments", help="directory to save the csv files")
     parser.add_argument("--max_scroll", type=int, default=4, help="max number of scrolls to perform")
     parser.add_argument("--max_comments", type=int, default=100, help="max number of comments to scrape")
     args = parser.parse_args()

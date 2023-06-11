@@ -99,14 +99,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--search_query_file", type=str, default="query.txt", help="Path to the search query file")
+    parser.add_argument("--query_file", type=str, default="query.txt", help="Path to the search query file")
     parser.add_argument("--output_dir", type=str, default="links", help="Path to the output directory")
     parser.add_argument("--max_scroll", type=int, default=3, help="Max number of times to scroll the page")
     parser.add_argument("--number_of_videos", type=int, default=10, help="Number of videos to scrape per query")
 
     args = parser.parse_args()
     query_list = []
-    with open(args.search_query_file, "r") as f:
+    with open(args.query_file, "r") as f:
         for line in f:
             query_list.append(line.strip())
 
